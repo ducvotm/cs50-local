@@ -41,6 +41,52 @@ db = SQL("sqlite:///finance.db")
 if not os.environ.get("API_KEY"):
     raise RuntimeError("API_KEY not set")
 
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """Register user"""
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+
+        # Ensure username was submitted
+        if not request.form.get("username"):
+            return apology("must provide username", 403)
+
+        # Ensure password was submitted
+        elif not request.form.get("password"):
+            return apology("must provide password", 403)
+        
+        # Ensure comfirmation password was submitted
+        elif not request.form.get("confirmation"):
+            return apology("must provide confirmation password", 403)
+        
+        # Ensure password and confirmation is same
+        elif not request.form.get("password") == request.form.get("confirmation"):
+            return apology("the confirmation is not match", 403)
+
+        # Query database for username
+        rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
+
+        # Ensure username exists and password is correct
+        if len(rows) > 1:
+            return apology("username already exists", 403)
+        
+        #Insert the new user into users
+        db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", request.form.get("username"), generate_password_hash(request.form.get("password")))
+        
+        # Query database for username login
+        #rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username")) ????????
+
+        # Remember which user has logged in
+        session["user_id"] = rows[0]["id"]
+        
+
+        # Redirect user to home page
+        return redirect("/")
+
+    # User reached route via GET (as by clicking a link or via redirect)
+    else:
+        return render_template("register.html")
+
 
 @app.route("/")
 @login_required
@@ -117,44 +163,7 @@ def quote():
     return apology("TODO")
 
 
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    """Register user"""
-    # User reached route via POST (as by submitting a form via POST)
-    if request.method == "POST":
 
-        # Ensure username was submitted
-        if not request.form.get("username"):
-            return apology("must provide username", 403)
-
-        # Ensure password was submitted
-        elif not request.form.get("password"):
-            return apology("must provide password", 403)
-        
-        # Ensure comfirmation password was submitted
-        elif not request.form.get("confirmation"):
-            return apology("must provide confirmation password", 403)
-        
-        # Ensure password and confirmation is same
-        elif not request.form.get("password") == request.form.get("confirmation"):
-            return apology("the confirmation is not match", 403)
-
-        # Query database for username
-        rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
-
-        # Ensure username exists and password is correct
-        if len(rows) == 1:
-            return apology("username already exists", 403)
-
-        # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
-
-        # Redirect user to home page
-        return redirect("/")
-
-    # User reached route via GET (as by clicking a link or via redirect)
-    else:
-        return render_template("register.html")
     
 
 
